@@ -22,7 +22,7 @@ impl Default for Timer {
 }
 
 impl Timer {
-    pub fn set_timeout(&self, milliseconds: usize, callback: JSValue) -> JSValue {
+    pub fn set_timeout(&self, callback: JSValue, milliseconds: usize) -> JSValue {
         call_2(
             UNDEFINED,
             self.fn_set_timeout,
@@ -46,7 +46,7 @@ impl Timer {
         future
     }
 
-    pub fn set_interval(&self, milliseconds: usize, callback: JSValue) -> JSValue {
+    pub fn set_interval(&self, callback: JSValue, milliseconds: usize) -> JSValue {
         call_2(
             UNDEFINED,
             self.fn_set_interval,
