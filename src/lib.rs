@@ -42,15 +42,17 @@ impl Timer {
         &self,
         callback: Box<dyn FnMut() -> () + Send>,
         milliseconds: usize,
-    ) -> JSValue {
-        call_2(
+    ) -> (usize, JSValue) {
+        let cb = create_callback_0(callback);
+        let handle = call_2(
             UNDEFINED,
             self.fn_set_timeout,
             TYPE_FUNCTION,
-            create_callback_0(callback),
+            cb,
             TYPE_NUM,
             milliseconds as JSValue,
-        )
+        ) as usize;
+        (handle, cb)
     }
 
     pub fn sleep(&self, milliseconds: usize) -> CallbackFuture {
@@ -70,40 +72,54 @@ impl Timer {
         &self,
         callback: Box<dyn FnMut() -> () + Send>,
         milliseconds: usize,
-    ) -> JSValue {
-        call_2(
+    ) -> (usize, JSValue) {
+        let cb = create_callback_0(callback);
+        let handle = call_2(
             UNDEFINED,
             self.fn_set_interval,
             TYPE_FUNCTION,
-            create_callback_0(callback),
+            cb,
             TYPE_NUM,
             milliseconds as JSValue,
-        )
+        ) as usize;
+        (handle, cb)
     }
 
-    pub fn request_animation_frame(&self, callback: Box<dyn FnMut() -> () + Send>) {
+    pub fn request_animation_frame(&self, callback: Box<dyn FnMut() -> () + Send>) -> JSValue {
+        let cb = create_callback_0(callback);
         call_1(
             UNDEFINED,
             self.fn_request_animation_frame,
             TYPE_FUNCTION,
-            create_callback_0(callback),
+            cb,
         );
+        cb
     }
 
-    pub fn request_animation_loop(&self, callback: Box<dyn FnMut(JSValue) -> () + Send>) {
+    pub fn request_animation_loop(
+        &self,
+        callback: Box<dyn FnMut(JSValue) -> () + Send>,
+    ) -> JSValue {
+        let cb = create_callback_1(callback);
+        call_1(UNDEFINED, self.fn_request_animation_loop, TYPE_FUNCTION, cb);
+        cb
+    }
+
+    pub fn clear_timeout(&self, handle: usize) {
         call_1(
             UNDEFINED,
-            self.fn_request_animation_loop,
-            TYPE_FUNCTION,
-            create_callback_1(callback),
+            self.fn_clear_timeout,
+            TYPE_NUM,
+            handle as JSValue,
         );
     }
 
-    pub fn clear_timeout(&self, handle: JSValue) {
-        call_1(UNDEFINED, self.fn_clear_timeout, TYPE_NUM, handle);
-    }
-
-    pub fn clear_interval(&self, handle: JSValue) {
-        call_1(UNDEFINED, self.fn_clear_interval, TYPE_NUM, handle);
+    pub fn clear_interval(&self, handle: usize) {
+        call_1(
+            UNDEFINED,
+            self.fn_clear_interval,
+            TYPE_NUM,
+            handle as JSValue,
+        );
     }
 }
