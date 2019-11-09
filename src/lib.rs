@@ -1,4 +1,6 @@
 #![no_std]
+extern crate alloc;
+use alloc::boxed::Box;
 use js_ffi::*;
 
 pub struct Timer {
@@ -36,12 +38,16 @@ impl Default for Timer {
 }
 
 impl Timer {
-    pub fn set_timeout(&self, callback: JSValue, milliseconds: usize) -> JSValue {
+    pub fn set_timeout(
+        &self,
+        callback: Box<dyn FnMut() -> () + Send>,
+        milliseconds: usize,
+    ) -> JSValue {
         call_2(
             UNDEFINED,
             self.fn_set_timeout,
             TYPE_FUNCTION,
-            callback,
+            create_callback_0(callback),
             TYPE_NUM,
             milliseconds as JSValue,
         )
@@ -60,32 +66,36 @@ impl Timer {
         future
     }
 
-    pub fn set_interval(&self, callback: JSValue, milliseconds: usize) -> JSValue {
+    pub fn set_interval(
+        &self,
+        callback: Box<dyn FnMut() -> () + Send>,
+        milliseconds: usize,
+    ) -> JSValue {
         call_2(
             UNDEFINED,
             self.fn_set_interval,
             TYPE_FUNCTION,
-            callback,
+            create_callback_0(callback),
             TYPE_NUM,
             milliseconds as JSValue,
         )
     }
 
-    pub fn request_animation_frame(&self, callback: JSValue) {
+    pub fn request_animation_frame(&self, callback: Box<dyn FnMut() -> () + Send>) {
         call_1(
             UNDEFINED,
             self.fn_request_animation_frame,
             TYPE_FUNCTION,
-            callback,
+            create_callback_0(callback),
         );
     }
 
-    pub fn request_animation_loop(&self, callback: JSValue) {
+    pub fn request_animation_loop(&self, callback: Box<dyn FnMut(JSValue) -> () + Send>) {
         call_1(
             UNDEFINED,
             self.fn_request_animation_loop,
             TYPE_FUNCTION,
-            callback,
+            create_callback_1(callback),
         );
     }
 
