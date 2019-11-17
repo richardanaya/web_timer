@@ -1,25 +1,28 @@
 #![no_std]
 extern crate alloc;
 use alloc::boxed::Box;
+use core::future::Future;
 use js_ffi::*;
 
+pub type Handle = JSValue;
+
 pub struct Timer {
-    fn_set_timeout: JSValue,
-    fn_set_interval: JSValue,
-    fn_request_animation_frame: JSValue,
-    fn_request_animation_loop: JSValue,
-    fn_clear_timeout: JSValue,
-    fn_clear_interval: JSValue,
+    fn_set_timeout: JSInvoker,
+    fn_set_interval: JSInvoker,
+    fn_request_animation_frame: JSInvoker,
+    fn_request_animation_loop: JSInvoker,
+    fn_clear_timeout: JSInvoker,
+    fn_clear_interval: JSInvoker,
 }
 
 impl Default for Timer {
     fn default() -> Self {
         Timer {
-            fn_set_timeout: register("window.setTimeout"),
-            fn_set_interval: register("window.setInterval"),
-            fn_request_animation_frame: register("window.requestAnimationFrame"),
-            fn_request_animation_loop: register(
-                "(cb)=>{
+            fn_set_timeout: js!(window.setTimeout),
+            fn_set_interval: js!(window.setInterval),
+            fn_request_animation_frame: js!(window.requestAnimationFrame),
+            fn_request_animation_loop: js!(
+                (cb)=>{
                     let time = Date.now();
                     function run(){
                         let new_time = Date.now();
@@ -29,10 +32,10 @@ impl Default for Timer {
                         cb(delta);
                     }
                     window.requestAnimationFrame(run);
-                }",
+                },
             ),
-            fn_clear_timeout: register("window.clearTimeout"),
-            fn_clear_interval: register("window.clearInterval"),
+            fn_clear_timeout: js!(window.clearTimeout),
+            fn_clear_interval: js!(window.clearInterval),
         }
     }
 }
@@ -41,85 +44,55 @@ impl Timer {
     pub fn set_timeout(
         &self,
         callback: Box<dyn FnMut() -> () + Send>,
-        milliseconds: usize,
-    ) -> (usize, JSValue) {
+        milliseconds: u32,
+    ) -> (Handle, JSFunction) {
         let cb = create_callback_0(callback);
-        let handle = call_2(
-            UNDEFINED,
-            self.fn_set_timeout,
-            TYPE_FUNCTION,
-            cb,
-            TYPE_NUM,
-            milliseconds as JSValue,
-        ) as usize;
+        let handle = self
+            .fn_set_timeout
+            .invoke_2(cb, JSNumber::from(milliseconds));
         (handle, cb)
     }
 
-    pub fn sleep(&self, milliseconds: usize) -> CallbackFuture {
-        let (future, cb) = CallbackFuture::new();
-        call_2(
-            UNDEFINED,
-            self.fn_set_timeout,
-            TYPE_FUNCTION,
-            cb,
-            TYPE_NUM,
-            milliseconds as JSValue,
-        );
+    pub fn sleep(&self, milliseconds: u32) -> impl Future {
+        let (future, cb) = create_callback_future_0();
+        self.fn_set_timeout
+            .invoke_2(cb, JSNumber::from(milliseconds));
         future
     }
 
     pub fn set_interval(
         &self,
         callback: Box<dyn FnMut() -> () + Send>,
-        milliseconds: usize,
-    ) -> (usize, JSValue) {
+        milliseconds: u32,
+    ) -> (Handle, JSFunction) {
         let cb = create_callback_0(callback);
-        let handle = call_2(
-            UNDEFINED,
-            self.fn_set_interval,
-            TYPE_FUNCTION,
-            cb,
-            TYPE_NUM,
-            milliseconds as JSValue,
-        ) as usize;
+        let handle = self
+            .fn_set_interval
+            .invoke_2(cb, JSNumber::from(milliseconds));
         (handle, cb)
     }
 
-    pub fn request_animation_frame(&self, callback: Box<dyn FnMut() -> () + Send>) -> JSValue {
+    pub fn request_animation_frame(&self, callback: Box<dyn FnMut() -> () + Send>) -> JSFunction {
         let cb = create_callback_0(callback);
-        call_1(
-            UNDEFINED,
-            self.fn_request_animation_frame,
-            TYPE_FUNCTION,
-            cb,
-        );
+        self.fn_request_animation_frame.invoke_1(cb);
         cb
     }
 
     pub fn request_animation_loop(
         &self,
         callback: Box<dyn FnMut(JSValue) -> () + Send>,
-    ) -> JSValue {
+    ) -> JSFunction {
         let cb = create_callback_1(callback);
-        call_1(UNDEFINED, self.fn_request_animation_loop, TYPE_FUNCTION, cb);
+        self.fn_request_animation_loop.invoke_1(cb);
         cb
     }
 
-    pub fn clear_timeout(&self, handle: usize) {
-        call_1(
-            UNDEFINED,
-            self.fn_clear_timeout,
-            TYPE_NUM,
-            handle as JSValue,
-        );
+    pub fn clear_timeout(&self, handle: Handle) {
+        self.fn_clear_timeout.invoke_1(JSNumber::from(handle));
     }
 
-    pub fn clear_interval(&self, handle: usize) {
-        call_1(
-            UNDEFINED,
-            self.fn_clear_interval,
-            TYPE_NUM,
-            handle as JSValue,
-        );
+    pub fn clear_interval(&self, handle: Handle) {
+        self.fn_clear_interval
+            .invoke_1(JSNumber::from(handle as f64));
     }
 }
