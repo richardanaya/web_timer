@@ -32,7 +32,7 @@ impl Default for Timer {
                         cb(delta);
                     }
                     window.requestAnimationFrame(run);
-                },
+                }
             ),
             fn_clear_timeout: js!(window.clearTimeout),
             fn_clear_interval: js!(window.clearInterval),
