@@ -47,16 +47,13 @@ impl Timer {
         milliseconds: u32,
     ) -> (Handle, JSFunction) {
         let cb = create_callback_0(callback);
-        let handle = self
-            .fn_set_timeout
-            .invoke_2(cb, JSNumber::from(milliseconds));
+        let handle = self.fn_set_timeout.invoke_2(cb, milliseconds);
         (handle, cb)
     }
 
     pub fn sleep(&self, milliseconds: u32) -> impl Future {
         let (future, cb) = create_callback_future_0();
-        self.fn_set_timeout
-            .invoke_2(cb, JSNumber::from(milliseconds));
+        self.fn_set_timeout.invoke_2(cb, milliseconds);
         future
     }
 
@@ -66,9 +63,7 @@ impl Timer {
         milliseconds: u32,
     ) -> (Handle, JSFunction) {
         let cb = create_callback_0(callback);
-        let handle = self
-            .fn_set_interval
-            .invoke_2(cb, JSNumber::from(milliseconds));
+        let handle = self.fn_set_interval.invoke_2(cb, milliseconds);
         (handle, cb)
     }
 
@@ -88,11 +83,10 @@ impl Timer {
     }
 
     pub fn clear_timeout(&self, handle: Handle) {
-        self.fn_clear_timeout.invoke_1(JSNumber::from(handle));
+        self.fn_clear_timeout.invoke_1(handle);
     }
 
     pub fn clear_interval(&self, handle: Handle) {
-        self.fn_clear_interval
-            .invoke_1(JSNumber::from(handle as f64));
+        self.fn_clear_interval.invoke_1(handle);
     }
 }
