@@ -18,10 +18,11 @@ pub struct Timer {
 impl Default for Timer {
     fn default() -> Self {
         Timer {
-            fn_set_timeout: js!(window.setTimeout),
-            fn_set_interval: js!(window.setInterval),
-            fn_request_animation_frame: js!(window.requestAnimationFrame),
-            fn_request_animation_loop: js!(
+            fn_set_timeout: register_function(r#"window.setTimeout"#),
+            fn_set_interval: register_function(r#"window.setInterval"#),
+            fn_request_animation_frame: register_function(r#"window.requestAnimationFrame"#),
+            fn_request_animation_loop: register_function(
+                r#"
                 (cb)=>{
                     let time = Date.now();
                     function run(){
@@ -33,9 +34,10 @@ impl Default for Timer {
                     }
                     window.requestAnimationFrame(run);
                 }
+            "#,
             ),
-            fn_clear_timeout: js!(window.clearTimeout),
-            fn_clear_interval: js!(window.clearInterval),
+            fn_clear_timeout: register_function(r#"window.clearTimeout"#),
+            fn_clear_interval: register_function(r#"window.clearInterval"#),
         }
     }
 }
